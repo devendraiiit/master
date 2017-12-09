@@ -1,0 +1,632 @@
+<html>
+
+<head>
+    <!-- https://improvement-ninjas.amazon.com/s3files/s3get.cgi/UrlGenerator_Geo.html -->
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Email Generator</title>
+
+    <link rel="shortcut icon" type="image/ico" href="http://singhdev-2.desktop.amazon.com/dev/email.png">
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        <!-- Initialize --->
+        var myHash = {};
+        var prev_Url = "";
+        var prev_Url_Value = "";
+        var dump = 0;
+
+        function load() {
+            myHides();
+            //dropDownOne("Geo","Geo");
+            //dropDownOne("Stage","Stage");
+        }
+
+        function LoadAsync(urls) {
+            urls = encodeURIComponent(urls);
+            urls = "ip.php?en=1&url=" + urls;
+            TempCallback = "Not Async";
+            $.ajax({
+                async: false,
+                type: 'GET',
+                url: urls,
+                success: function(data) {
+                    //callback
+                    TempCallback = data;
+                }
+            });
+            return TempCallback;
+        }
+
+        function dropDownOne(geo, id) {
+
+            // if id=> Geo then stage "" , When id="Stage" then stage will be corresonding value
+            var dropDownValue = LoadAsync("link/Link_" + geo);
+            var dropList = dropDownValue.split("\n");
+
+            //Clearing Previous DropDown
+            $("#" + id).empty();
+            var dropDownL = document.getElementById(id);
+
+            for (var i = 0; i < dropList.length; i++) {
+                var value = dropList[i];
+                //document.getElementById('Geo').add(new Option(value,value));
+                dropDownL.add(new Option(value, value));
+
+            }
+
+        }
+
+        function UploaD(filename, text, message) {
+            var isPrint = 1;
+            var myHash = {};
+            myHash['filename'] = filename;
+            myHash['text'] = text;
+            myHash['overwrite'] = "0";
+
+            $.post('upload_check.php', myHash, function(response) {
+                if (isPrint == 1) {
+                    if (response == "exists") {
+                        var vals = confirm("Overwriting :" + message);
+                        if (vals != true) {
+                            //putOutputDiv("File is not overwritten");
+                        } else {
+                            myHash['overwrite'] = "1";
+                            $.post('upload.php', myHash, function(response) {
+                                putOutputDiv("Uploading " + target + " File on Server ...");
+                                putOutputDiv(response);
+                                putOutputDiv('File:' + filename + ' is overwritten <a href="' + filename + '">' + filename + '</a>');
+                            });
+                        }
+                    } else {
+                        putOutputDiv("Uploading " + target + " File on Server ");
+                        putOutputDiv('File:' + filename + ' is uploaded <a href="' + filename + '">' + filename + '</a>');
+
+                        //putOutputDiv(response);
+                    }
+                }
+
+            });
+
+        }
+
+        function SAVE() {
+
+            var geo = document.getElementById('Geo').value;
+            var stage = document.getElementById('Stage').value;
+            var email = document.getElementById('Email').value;
+
+            //if(geo=="-" || stage=="-" || email =="-" )
+            //	return;
+
+            var url = ("url_" + email + "_" + geo + "_" + stage + "");
+            var order = ("order_" + email + "_" + geo + "_" + stage + "");
+
+            var urlValue = getRefUrlDiv("");
+            var orderValue = getInputDiv("");
+
+            UploaD(url, urlValue, "Ref URL");
+            UploaD(order, orderValue, "Order Data");
+
+        }
+
+        function selecT() {
+
+            var geo = document.getElementById('Geo').value;
+            var stage = document.getElementById('Stage').value;
+            var email = document.getElementById('Email').value;
+
+            //if(geo=="-" || stage=="-" || email =="-" )
+            //	return;
+
+            //appendOutputDiv(geo);
+            //appendOutputDiv(stage);
+            //appendOutputDiv("IndiaRocks");
+
+            //			var url=("link/url_"+geo+"_"+stage+"");
+            //			var order=("link/order_"+geo+"_"+stage+"");
+
+            var url = ("url_" + email + "_" + geo + "_" + stage + "");
+            var order = ("order_" + email + "_" + geo + "_" + stage + "");
+
+            //	appendOutputDiv(order);
+
+            //replacing Dump
+            if (prev_Url === url && false) {
+                if (dump === 0) {
+                    dump = 1;
+                    //appendOutputDiv("Dump_Type_1");
+                    prev_Url_Value = prev_Url_Value.replace("templateData/shipment-complete.html", "hashDump/order-shipment-dump.html");
+                    prev_Url_Value = prev_Url_Value.replace("csnotificationrendering/shipment-complete-json.html", "hashDump/order-shipment-dump.html");
+                    putRefUrlDiv(prev_Url_Value);
+                    return;
+                } else if (dump === 1) {
+                    dump = 2;
+                    //appendOutputDiv("Dump_Type_2");
+                    prev_Url_Value = prev_Url_Value.replace("templateData/shipment-complete.html", "csnotificationrendering/shipment-complete-json.html");
+                    prev_Url_Value = prev_Url_Value.replace("hashDump/order-shipment-dump.html", "csnotificationrendering/shipment-complete-json.html");
+                    putRefUrlDiv(prev_Url_Value);
+                    return;
+                }
+            }
+            prev_Url = url;
+            dump = 0;
+
+            var urlss = LoadAsync(url);
+            putRefUrlDiv(urlss);
+            prev_Url_Value = urlss;
+
+            var orderss = LoadAsync(order);
+            if (orderss.indexOf(" ") == -1) {
+                //  orderss=LoadAsync(orderss);
+            }
+            putInputDiv(orderss);
+
+        }
+
+        <!-- Matured functions --->
+
+        function appendOutputDiv(str) {
+            var txt = document.getElementById("OutputDiv");
+            txt.innerHTML = str + txt.innerHTML;
+        }
+
+        function putOutputDiv(str) {
+            document.getElementById("OutputDiv").innerHTML = str;
+        }
+
+        function putRefUrlDiv(str) {
+            document.getElementById('RefUrlDiv').value = str;
+        }
+
+        function putInputDiv(str) {
+            document.getElementById('InputDiv').value = str;
+        }
+
+        function getRefUrlDiv(str) {
+            return document.getElementById('RefUrlDiv').value;
+        }
+
+        function getInputDiv(str) {
+            return document.getElementById('InputDiv').value;
+        }
+
+        <!-- Regex -->
+
+        function trim(str) {
+            return str.replace(/^\s+|\s+$/g, "");
+        }
+
+        function ltrim(str) {
+            str = str.replace(/\t/g, ' ');
+            return str.replace(/^\s+/, '');
+        }
+
+        function rtrim(str) {
+            return str.replace(/\s+$/, '');
+        }
+
+        function replaceMultiSpace(str) {
+            return str.replace(/\s{2,}/g, ' ');
+        }
+
+        function replaceComma(str) {
+            return str.replace(/,/g, " ");
+        }
+
+        function replaceAll(dest, replace, with_this) {
+            return dest.replace(new RegExp(replace, 'g'), with_this);
+        }
+
+        function htmlEncode(value) {
+            return $('<div/>').text(value).html();
+        }
+
+        function htmlDecode(value) {
+            return $('<div/>').html(value).text();
+        }
+
+        <!-- Non Matured functions --->
+
+        function replace1() {
+
+            var firstColumn = document.getElementById('firstColumn').value;
+            var secondColumn = document.getElementById('secondColumn').value;
+            var obj = document.getElementById('InputDiv');
+            var str = obj.value;
+            obj.value = replaceAll(str, firstColumn, secondColumn);
+        }
+
+        function encode() {
+            var obj = document.getElementById('InputDiv');
+            var unencoded = obj.value;
+            obj.value = encodeURIComponent(unencoded);
+        }
+
+        function decode() {
+            var obj = document.getElementById('InputDiv');
+            var encoded = obj.value;
+            obj.value = decodeURIComponent(encoded.replace(/\+/g, " "));
+        }
+
+        function splitPutSpace(source, parse) { // it will take source string and parse and put spaces between them
+            var first = source.split(parse);
+            var result = "";
+            for (var i = 0; i < first.length; i++) {
+                result += (first[i] + " ");
+            }
+            return result;
+        }
+
+        function parse() {
+            cleanSpaceDiv('InputDiv');
+            cleanSpaceDiv('RefUrlDiv');
+
+            var obj1 = document.getElementById('InputDiv');
+            var result = obj1.value;
+
+            var obj2 = document.getElementById('RefUrlDiv');
+            var source = obj2.value;
+
+            var txt = document.getElementById("OutputDiv");
+
+            //txt.innerHTML="before output  "+result+txt.innerHTML;
+
+            result = replaceSpaceWithLine(result);
+            var first = source.split(" ");
+            for (var i = 0; i < first.length; i++) {
+                result = splitPutSpace(result, first[i]);
+            }
+            //txt.innerHTML=result+txt.innerHTML;
+            txt.innerHTML = replaceSpaceWithLine(result) + txt.innerHTML;
+        }
+
+        function swapCopy() {
+            var obj1 = document.getElementById('InputDiv');
+            var result = obj1.value;
+
+            if (document.all) {
+                var txt = document.getElementById("OutputDiv");
+                var footer = txt.innerText;
+                var footer1 = document.getElementById('footer1');
+                obj1.value = footer;
+                txt.innerText = result;
+            } else {
+                var txt = document.getElementById("OutputDiv");
+                var footer = txt.textContent;
+                var footer1 = document.getElementById('footer1');
+                obj1.value = footer;
+                txt.textContent = result;
+
+            }
+        }
+
+        function mycode() {
+            cleanSpaces();
+            var delimit = "\n";
+
+            var txt = document.getElementById("OutputDiv");
+            var strns = document.getElementById('InputDiv').value;
+            var mySplitResult = strns.split(delimit);
+            var temp = "";
+            for (var i = 0; i < mySplitResult.length; i++) {
+                var single = mySplitResult[i];
+                var single1 = single;
+                single1 = single1.replace(/\t/g, '');
+                single1 = single1.replace(/\s+/g, '');
+                if (single.indexOf(">>") != -1) {
+                    //if(i<100)
+                    temp += (single + "<br>");
+                } else if (single1 == '') {
+                    temp += (single + "<br>");
+                } else {
+                    var strn = proc(single);
+                    temp += ("<a href=\"" + strn + "\">" + strn + "</a><br>");
+                }
+            }
+            txt.innerHTML = temp + txt.innerHTML;
+        }
+
+        function proc(my_str) {
+            var delimit_id = " ";
+            var delimit_url = document.getElementById('delimiter').value;
+            var url_str = document.getElementById('RefUrlDiv').value;
+
+            var first = url_str.split(delimit_url);
+            var second = my_str.split(delimit_id);
+            var temp = first[0];
+            if (first.length > second.length + 1)
+                return "";
+            for (var i = 0; i < first.length - 1; i++) {
+                second[i] = second[i].trim();
+                temp += (second[i] + first[i + 1]);
+            }
+            return temp;
+        }
+
+        function cleanSpaceDiv(str) {
+            var obj = document.getElementById(str);
+            var strns = obj.value;
+            strns = cleanSpaceLine(strns);
+            obj.value = strns;
+        }
+
+        function cleanSpaces() {
+            var obj = document.getElementById('InputDiv');
+            var strns = obj.value;
+            strns = cleanSpaceLine(strns);
+            obj.value = strns;
+        }
+
+        function cleanSpaceLine(strns) {
+            var strn = strns.split("\n");
+            var out = "";
+            for (var i = 0; i < strn.length; i++) {
+                if (i == 0) out = cleanSpace(strn[i]);
+                else
+                    out += "\n" + cleanSpace(strn[i]);
+            }
+            return out;
+        }
+
+        function cleanSpace(str) {
+            //Hack
+            str = str.replace(/\n/g, 'DEVNDRA');
+            str = rtrim(ltrim(replaceMultiSpace(replaceComma(str))));
+            return str.replace(/DEVNDRA/g, '\n');
+        }
+
+        function replaceSpaceWithLine(str) {
+            return str.replace(/\s{2,}/g, '<br>');
+        }
+
+        function swap() {
+            cleanSpaces();
+            var obj = document.getElementById('InputDiv');
+            var strns = obj.value;
+            strns = swaps(strns);
+            obj.value = strns;
+            cleanSpaces();
+        }
+
+        function swaps(strns) {
+            var firstColumn = document.getElementById('firstColumn').value;
+            var secondColumn = document.getElementById('secondColumn').value;
+            firstColumn -= 1;
+            secondColumn -= 1;
+            var strn = strns.split("\n");
+            var out = "";
+
+            for (var i = 0; i < strn.length; i++) {
+                var str = strn[i].split(" ");
+                var ou = "";
+                var er = 1;
+
+                if (str.length >= firstColumn + 1 && str.length >= secondColumn + 1)
+                    er = 0;
+                for (var j = 0; j < str.length; j++) {
+                    if (j == firstColumn && er == 0)
+                        ou += (" " + str[secondColumn]);
+                    else if (j == secondColumn && er == 0)
+                        ou += (" " + str[firstColumn]);
+                    else
+                        ou += (" " + str[j]);
+
+                }
+                if (out == "")
+                    out = ou;
+                else
+                    out = out + "\n" + ou;
+
+            }
+
+            return out;
+        }
+
+        function delete1() {
+            cleanSpaces();
+            var obj = document.getElementById('InputDiv');
+            var strns = obj.value;
+            strns = delete2(strns);
+            obj.value = strns;
+            cleanSpaces();
+        }
+
+        function delete2(strns) {
+            var firstColumn = document.getElementById('firstColumn').value;
+            firstColumn -= 1;
+            var strn = strns.split("\n");
+            var out = "";
+
+            for (var i = 0; i < strn.length; i++) {
+                var str = strn[i].split(" ");
+                var ou = "";
+                var er = 1;
+
+                if (str.length >= firstColumn + 1)
+                    er = 0;
+                for (var j = 0; j < str.length; j++) {
+                    if (j == firstColumn && er == 0)
+                        ou += ""; //(" "+str[secondColumn]);
+                    else
+                        ou += (" " + str[j]);
+                }
+                if (out == "")
+                    out = ou;
+                else
+                    out = out + "\n" + ou;
+
+            }
+
+            return out;
+        }
+
+        function myHide(str) {
+            str = "#Ref" + str; //Refi
+            // $(str).toggle();
+            $(str).slideToggle("slow");
+        }
+
+        var moreVal = 0;
+
+        function myHid(str) {
+            str = "#Ref" + str; //Refi
+            $(str).toggle();
+            //  $(str).slideToggle("slow");
+        }
+
+        function myHides() {
+            myHide("1");
+            myHid("2");
+            myHid("3");
+            myHid("4");
+
+            if (moreVal == 0) {
+                document.getElementById('more').value = "More...";
+            } else {
+                document.getElementById('more').value = "Less...";
+            }
+            moreVal = 1 - moreVal;
+            more
+        }
+
+        <!-- Obedient USers -->
+
+        function clearOutputDiv() {
+            putOutputDiv("");
+        }
+
+        function helpGen() {
+            putRefUrlDiv("http://cs-customer-notification-fe-gamma.amazon.com:19810/getNotificationContent?orderId=\,&shipmentId=\,&eventType=ShipmentCompleted&marketplaceId=6");
+            putInputDiv("250-4968723-1807061	1509424435128\n250-6359691-9075815	449114526084\n249-0887740-9227823	449114585084\n249-4563889-0626235	449114607084\n249-0931869-9561447	1509424543128\n250-6490349-8163068	449122213084");
+
+        }
+
+        function helpParse() {
+            putRefUrlDiv("http://development.amazon.com/gp/mail/templateData/shipment-complete.html/?orderId= &shipmentId= &eventType=ShipmentCompleted&marketplaceId=1");
+            putInputDiv("http://development.amazon.com/gp/mail/templateData/shipment-complete.html/?orderId=902-6241159-6550124&shipmentId=6041267038&eventType=ShipmentCompleted&marketplaceId=1\nhttp://development.amazon.com/gp/mail/templateData/shipment-complete.html/?orderId=902-4218049-8172518&shipmentId=5527302425&eventType=ShipmentCompleted&marketplaceId=1\nhttp://development.amazon.com/gp/mail/templateData/shipment-complete.html/?orderId=902-6459161-6114125&shipmentId=6057627038&eventType=ShipmentCompleted&marketplaceId=1\nhttp://development.amazon.com/gp/mail/templateData/shipment-complete.html/?orderId=902-6365868-6413369&shipmentId=5527389425&eventType=ShipmentCompleted&marketplaceId=1\nhttp://development.amazon.com/gp/mail/templateData/shipment-complete.html/?orderId=902-3110939-7617343&shipmentId=6022879038&eventType=ShipmentCompleted&marketplaceId=1\nhttp://development.amazon.com/gp/mail/templateData/shipment-complete.html/?orderId=902-4935007-4086953&shipmentId=5530011425&eventType=ShipmentCompleted&marketplaceId=1");
+        }
+
+        function helpOP() {
+            appendOutputDiv("<br> <b>Help Swap : </b> Swap columns in Order/Shipment Textbox. <br><br> <b>Help Del : </b> Delete entered Column in Order Textbox <br><br> <b>Help Replace : </b> It will replace first entered string to second string in Order Textbox<br><br> <b>Some More feature is Work IN Progress ::::: Use Ctrl+Z to get Data Back in Text Boxes </b><br>");
+
+        }
+    </script>
+
+</head>
+
+<body style="-moz-user-select: text;" onload="load()">
+
+<!-- RefUrlDiv  -->
+<form action="" onsubmit="return false;">
+    <h2 style="color:Gray">Ref URL </h2>
+    <textarea cols="165" rows="1" id="RefUrlDiv"></textarea>
+</form>
+
+<h2 style="color:Gray">
+    Order Data: &nbsp;
+    <span style="color:red">Email</span>
+    <select id="Email">
+        <option selected="selected" value="-">-</option>
+        <option value="SCE">SCE</option>
+        <option value="DOCE">DOCE</option>
+        <option value="ROCE">ROCE</option>
+        <option value="PDC">PDC</option>
+        <option value="PHD">PHD</option>
+        <option value="PSD">PSD</option>
+        <option value="APEX">APEX</option>
+        <option value="BOC">BOC</option>
+        <option value="SU">SU</option>
+    </select>
+
+    <span style="color:blue">Geos</span>
+    <select id="Geo">
+        <option selected="selected" value="-">-</option>
+        <option value="US">US</option>
+        <option value="UK">UK</option>
+        <option value="CA">CA</option>
+        <option value="CN">CN</option>
+        <option value="DE">DE</option>
+        <option value="ES">ES</option>
+        <option value="FR">FR</option>
+        <option value="IN">IN</option>
+        <option value="IT">IT</option>
+        <option value="JP">JP</option>
+        <option value="0">-</option>
+        <!-- Controller  -->
+        <option value="AU">AU</option>
+        <option value="BR">BR</option>
+        <option value="RU">RU</option>
+        <option value="MX">MX</option>
+    </select>
+
+    <span style="color:green">Stage</span>
+    <select id="Stage">
+        <option selected="selected" value="-">-</option>
+        <option value="Cntrl-Prod">Cntrl-Prod</option>
+        <option value="Cntrl-Gamma">Cntrl-Gamma</option>
+        <option value="Cntrl-Sand">Cntrl-Sand</option>
+        <option value="Cntrl-Sand1">Cntrl-Sand1</option>
+        <option value="Cntrl-Sand2">Cntrl-Sand2</option>
+        <option value="OneBox">OneBox</option>
+        <option value="Prod">Prod</option>
+        <option value="Gamma">Gamma</option>
+        <option value="Sandbox">SandB</option>
+        <option value="PreGamma">Pre-G</option>
+        <option value="PreProd">Pre-P</option>
+        <option value="Beta">Beta</option>
+        <option value="Cntrl-Beta">Cntrl-Beta</option>
+    </select>
+
+    <input onclick="selecT()" value="Select" type="button">
+
+</h2>
+
+<!-- InputDiv  -->
+<form action="" onsubmit="return false;">
+
+    <textarea cols="80" rows="12" id="InputDiv" style="background:rgb(238, 238, 255)"></textarea>
+    <div>
+        <input onclick="mycode()" value="Generate" type="button">
+        <input onclick="parse()" value="Parse" type="button">
+
+        <!--
+        <input onclick="cleanSpaces()" value="Clean Space" type="button">
+    -->
+        <input onclick="SAVE()" value="&quot;SAVE&quot;" type="button">
+
+        <select id="delimiter">
+            <option selected="selected" value=",">,</option>
+            <option value="$">$</option>
+            <option value="@">@</option>
+        </select>
+
+        <input id="more" onclick="myHides()" value="More..." type="button">
+        <input style="display: none;" id="Ref2" class="hide" onclick="helpGen()" value="Help Gen." type="button">
+        <input style="display: none;" id="Ref3" class="hide" onclick="helpParse()" value="Help Parse" type="button">
+        <input style="display: none;" id="Ref4" class="hide" onclick="helpOP()" value="Help Operation" type="button">
+
+    </div>
+</form>
+
+<form action="" onsubmit="return false;">
+
+    <div style="display: none;" id="Ref1" class="hide">
+        <textarea cols="3" rows="1" id="firstColumn" style="background:rgb(238, 238, 255)">1</textarea>
+        <textarea cols="3" rows="1" id="secondColumn" style="bdackground:rgb(238, 238, 255)">2</textarea>
+        <br>
+
+        <input onclick="swap()" value="Swap" type="button">
+        <input onclick="delete1()" value="Del" type="button">
+        <input onclick="replace1()" value="Replace" type="button">
+    </div>
+    <h3 style="color:Gray">Output: <input onclick="clearOutputDiv()" value="Clear" type="button"> <a
+            href="http://singhdev-2.desktop.amazon.com/dev/Sender.php">Email Sender </a> &nbsp;&nbsp;<a
+            href="https://improvement-ninjas.amazon.com/s3files/s3get.cgi/template_link_gen.html">Template Gen</a>
+    </h3>
+</form>
+
+<!-- Output Region -->
+<div id="OutputDiv"></div>
+
+</body>
+
+</html>
